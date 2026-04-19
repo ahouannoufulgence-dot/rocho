@@ -858,57 +858,39 @@ function previewImg(e, prevId, varName) {
 /* =========================================
    SUPABASE STORAGE UPLOAD
 ========================================= */
-async function uploadImg(base64, path) {
+async function uploadImg(base64, filePath) {
   if (!base64) return null;
   try {
-    // Extraire le type et les données base64
-    const matches  = base64.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) throw new Error('Format base64 invalide');
+    // Convertir base64 en File object
+    const arr  = base64.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const ext  = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1];
+    const name = 'jrf_' + Date.now() + '.' + ext;
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    const file = new File([u8arr], name, { type: mime });
 
-    const mimeType  = matches[1];
-    const b64Data   = matches[2];
-    const ext       = mimeType.split('/')[1].replace('jpeg','jpg') || 'jpg';
-    const fileName  = 'jrf_' + Date.now() + '_' + Math.random().toString(36).substring(2,8) + '.' + ext;
-
-    // Convertir base64 en Uint8Array
-    const byteChars  = atob(b64Data);
-    const byteArrays = [];
-    for (let i = 0; i < byteChars.length; i += 512) {
-      const slice = byteChars.slice(i, i + 512);
-      const bytes = new Uint8Array(slice.length);
-      for (let j = 0; j < slice.length; j++) {
-        bytes[j] = slice.charCodeAt(j);
-      }
-      byteArrays.push(bytes);
-    }
-    const blob = new Blob(byteArrays, { type: mimeType });
-
-    // Upload vers Supabase Storage
+    // Upload
     const { data, error } = await db.storage
       .from('images')
-      .upload(fileName, blob, {
-        contentType: mimeType,
-        cacheControl: '3600',
-        upsert: true
-      });
+      .upload(name, file, { upsert: true });
 
     if (error) {
-      console.error('Storage error:', error);
-      showToast('❌ Storage: ' + error.message);
+      showToast('❌ Upload: ' + error.message);
+      console.error('Upload error:', error);
       return null;
     }
 
-    // Récupérer l'URL publique
-    const { data: urlData } = db.storage
-      .from('images')
-      .getPublicUrl(fileName);
-
-    console.log('✅ Image uploadée:', urlData.publicUrl);
-    return urlData.publicUrl;
+    // URL publique
+    const { data: pub } = db.storage.from('images').getPublicUrl(name);
+    showToast('📸 Photo uploadée !');
+    return pub.publicUrl;
 
   } catch(e) {
-    console.error('Upload error:', e);
-    showToast('❌ Upload échoué: ' + e.message);
+    showToast('❌ ' + e.message);
+    console.error(e);
     return null;
   }
 }
