@@ -732,22 +732,15 @@ footer{background:var(--noir);color:rgba(255,255,255,0.55);text-align:center;pad
 const WA        = '22901505283 37';
 const ADMIN_PWD = 'Rocho2024';
 
-const FB_CONFIG = {
-  apiKey:           'AIzaSyBWoMur9pK0nZoZCjq3SqJCMcVvOpcQ13g',
-  authDomain:       'rochopj.firebaseapp.com',
-  projectId:        'rochopj',
-  storageBucket:    'rochopj.firebasestorage.app',
-  messagingSenderId:'647665184865',
-  appId:            '1:647665184865:web:50c3663720134c0c587a20'
-};
+// Firebase supprimé — Supabase Storage utilisé
 
 const SB_URL = 'https://vsgbhcijyhwbevgxumjk.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZ2JoY2lqeWh3YmV2Z3h1bWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MjAxNTAwMDAwMH0.placeholder';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZzZ2JoY2lqeWh3YmV2Z3h1bWprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MDk0MzksImV4cCI6MjA5MjA4NTQzOX0.OIdL9A-UTS6Mt-QNDGM-RvVrB8aEBwhjaQQhPd3HYmg';
 
 /* =========================================
    STATE
 ========================================= */
-let db, fbStorage, isReady = false;
+let db, isReady = false;
 let allModels = [], currentModelId = null;
 let editingModelId = null, editingBlogId = null;
 let modelImg = null, blogImg = null, editModelImg = null, editBlogImg = null;
@@ -761,11 +754,7 @@ let modelImg = null, blogImg = null, editModelImg = null, editBlogImg = null;
     document.getElementById('page-loader').classList.add('hidden');
   }, 2000);
 
-  try {
-    // Firebase Storage
-    firebase.initializeApp(FB_CONFIG);
-    fbStorage = firebase.storage();
-  } catch(e) { console.warn('Firebase init:', e.message); }
+// Firebase supprimé — Supabase Storage utilisé
 
   try {
     // Supabase
@@ -867,16 +856,30 @@ function previewImg(e, prevId, varName) {
 }
 
 /* =========================================
-   FIREBASE STORAGE UPLOAD
+   SUPABASE STORAGE UPLOAD
 ========================================= */
 async function uploadImg(base64, path) {
-  if (!base64 || !fbStorage) return null;
+  if (!base64) return null;
   try {
-    const ref  = fbStorage.ref(path + '_' + Date.now());
-    const snap = await ref.putString(base64, 'data_url');
-    return await snap.ref.getDownloadURL();
+    // Convertir base64 en blob
+    const res   = await fetch(base64);
+    const blob  = await res.blob();
+    const ext   = blob.type.split('/')[1] || 'jpg';
+    const fileName = path.replace(/[^a-zA-Z0-9_-]/g,'_') + '_' + Date.now() + '.' + ext;
+
+    const { data, error } = await db.storage
+      .from('images')
+      .upload(fileName, blob, { contentType: blob.type, upsert: true });
+
+    if (error) throw error;
+
+    const { data: urlData } = db.storage
+      .from('images')
+      .getPublicUrl(fileName);
+
+    return urlData.publicUrl;
   } catch(e) {
-    console.warn('Firebase upload:', e.message);
+    console.warn('Supabase Storage upload:', e.message);
     return null;
   }
 }
