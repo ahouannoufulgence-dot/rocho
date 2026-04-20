@@ -7,6 +7,34 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<!--
+=== NOUVELLES TABLES SUPABASE — Exécutez dans SQL Editor ===
+
+-- Table visiteurs
+create table if not exists visitors (
+  id uuid default gen_random_uuid() primary key,
+  date text,
+  created_at timestamptz default now()
+);
+alter table visitors disable row level security;
+
+-- Table avis clients
+create table if not exists avis (
+  id uuid default gen_random_uuid() primary key,
+  author text not null,
+  text text not null,
+  stars int default 5,
+  date text,
+  created_at timestamptz default now()
+);
+alter table avis disable row level security;
+
+-- Ajouter colonnes manquantes aux tables existantes
+alter table models add column if not exists likes int default 0;
+alter table models add column if not exists active boolean default true;
+
+===================================================
+-->
 <style>
 :root{
   --rose:#F2C4CE;--rose-light:#FDF0F3;--rose-deep:#E8A0B0;
@@ -282,6 +310,7 @@ footer{background:var(--noir);color:rgba(255,255,255,0.55);text-align:center;pad
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .reveal{opacity:0;transform:translateY(28px);transition:opacity 0.7s ease,transform 0.7s ease}
 .reveal.visible{opacity:1;transform:translateY(0)}
+@keyframes bandeau{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
 @keyframes ldP{0%,100%{opacity:1}50%{opacity:0.3}}
 @keyframes ldB{to{width:100%}}
@@ -320,6 +349,16 @@ footer{background:var(--noir);color:rgba(255,255,255,0.55);text-align:center;pad
     <li><a href="#blog">Blog</a></li>
     <li><a href="#apropos">À propos</a></li>
     <li><a href="#contact">Contact</a></li>
+    <li>
+      <div class="search-wrap" style="position:relative;display:flex;align-items:center">
+        <input type="text" id="search-input" placeholder="🔍 Rechercher…" oninput="searchModels(this.value)"
+          style="padding:7px 14px;border:1px solid var(--rose-deep);border-radius:50px;font-family:'Jost',sans-serif;
+          font-size:0.76rem;background:#fff;color:var(--noir);outline:none;width:160px;transition:all 0.3s">
+      </div>
+    </li>
+    <li><button onclick="toggleDarkMode()" id="dark-btn" title="Mode sombre"
+      style="background:none;border:1px solid var(--rose-deep);color:var(--noir);width:36px;height:36px;
+      border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.3s">🌙</button></li>
     <li><a href="#" class="btn-admin-nav" onclick="openAdminLogin();return false;">⚙ Admin</a></li>
   </ul>
   <button class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></button>
@@ -344,6 +383,39 @@ footer{background:var(--noir);color:rgba(255,255,255,0.55);text-align:center;pad
   </div>
   <div class="scroll-hint"><p>Défiler</p><div class="scroll-line"></div></div>
 </section>
+<!-- BANDEAU -->
+<div style="background:var(--rouge);color:#fff;padding:10px 0;overflow:hidden;white-space:nowrap">
+  <div style="display:inline-block;animation:bandeau 22s linear infinite">
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Tenues Traditionnelles ✦</span>
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Robes de Luxe ✦</span>
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Prêt-à-porter Femme ✦</span>
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Prêt-à-porter Homme ✦</span>
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Sur mesure ✦</span>
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Porto-Novo Bénin ✦</span>
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Jean Rocheline Fashion ✦</span>
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Tenues Traditionnelles ✦</span>
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Robes de Luxe ✦</span>
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Sur mesure ✦</span>
+    <span style="display:inline-block;padding:0 2rem;font-size:0.72rem;letter-spacing:3px;text-transform:uppercase">Jean Rocheline Fashion ✦</span>
+  </div>
+</div>
+
+<!-- SERVICES -->
+<section style="padding:4rem 3rem;background:var(--noir)">
+  <div class="section-header reveal" style="margin-bottom:3rem">
+    <div class="section-tag" style="color:rgba(255,255,255,0.6)">✦ Ce que nous faisons</div>
+    <h2 class="section-title" style="color:#fff">Nos Services</h2>
+    <div class="section-line"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:2rem;max-width:1100px;margin:0 auto">
+    <div class="reveal" style="text-align:center;padding:1.5rem 1rem"><div style="font-size:2.5rem;margin-bottom:1rem">✂️</div><div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#fff;margin-bottom:0.5rem">Sur mesure</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.6);line-height:1.6">Tenues conçues pour votre morphologie</div></div>
+    <div class="reveal" style="text-align:center;padding:1.5rem 1rem"><div style="font-size:2.5rem;margin-bottom:1rem">👗</div><div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#fff;margin-bottom:0.5rem">Prêt-à-porter</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.6);line-height:1.6">Collections femmes et hommes</div></div>
+    <div class="reveal" style="text-align:center;padding:1.5rem 1rem"><div style="font-size:2.5rem;margin-bottom:1rem">🎊</div><div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#fff;margin-bottom:0.5rem">Événements</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.6);line-height:1.6">Mariages, soirées, cérémonies</div></div>
+    <div class="reveal" style="text-align:center;padding:1.5rem 1rem"><div style="font-size:2.5rem;margin-bottom:1rem">🪡</div><div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#fff;margin-bottom:0.5rem">Retouches</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.6);line-height:1.6">Ajustements pour coupe parfaite</div></div>
+    <div class="reveal" style="text-align:center;padding:1.5rem 1rem"><div style="font-size:2.5rem;margin-bottom:1rem">🌍</div><div style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#fff;margin-bottom:0.5rem">Traditionnel</div><div style="font-size:0.8rem;color:rgba(255,255,255,0.6);line-height:1.6">Patrimoine africain valorisé</div></div>
+  </div>
+</section>
+
 <section id="galerie">
   <div class="section-header reveal">
     <div class="section-tag">✦ Nos créations</div>
@@ -361,6 +433,32 @@ footer{background:var(--noir);color:rgba(255,255,255,0.55);text-align:center;pad
   </div>
   <div class="gallery-grid" id="gallery-grid"><div class="loading-state">Chargement…</div></div>
 </section>
+<!-- AVIS CLIENTS -->
+<section id="avis" style="padding:6rem 3rem;background:var(--rose-light)">
+  <div class="section-header reveal">
+    <div class="section-tag">✦ Témoignages</div>
+    <h2 class="section-title">Avis Clients</h2>
+    <div class="section-line"></div>
+  </div>
+  <div id="avis-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2rem;max-width:1200px;margin:0 auto 3rem">
+    <div class="loading-state" style="grid-column:1/-1">Chargement…</div>
+  </div>
+  <div style="max-width:600px;margin:0 auto;background:#fff;padding:2rem;border-radius:4px;box-shadow:0 4px 20px rgba(0,0,0,0.06)" class="reveal">
+    <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:400;margin-bottom:1.5rem;color:var(--noir)">Donnez votre avis ⭐</h3>
+    <div id="stars-select" style="display:flex;gap:0.5rem;margin-bottom:1rem;font-size:1.8rem;cursor:pointer">
+      <span onclick="setStars(1)" style="transition:transform 0.2s;color:#ddd">★</span>
+      <span onclick="setStars(2)" style="transition:transform 0.2s;color:#ddd">★</span>
+      <span onclick="setStars(3)" style="transition:transform 0.2s;color:#ddd">★</span>
+      <span onclick="setStars(4)" style="transition:transform 0.2s;color:#ddd">★</span>
+      <span onclick="setStars(5)" style="transition:transform 0.2s;color:#f1c40f;transform:scale(1.2)">★</span>
+    </div>
+    <div class="fg"><label class="a-label">Votre prénom *</label><input type="text" id="avis-name" class="a-input" placeholder="Ex: Aminata"></div>
+    <div class="fg"><label class="a-label">Votre avis *</label><textarea id="avis-text" class="a-textarea" rows="4" placeholder="Partagez votre expérience…"></textarea></div>
+    <button class="btn-submit" id="btn-avis" onclick="submitAvis()">Publier mon avis ✓</button>
+    <div class="success-msg" id="avis-ok">✅ Merci pour votre avis !</div>
+  </div>
+</section>
+
 <section id="blog">
   <div class="section-header reveal">
     <div class="section-tag">✦ Actualités</div>
@@ -420,7 +518,16 @@ footer{background:var(--noir);color:rgba(255,255,255,0.55);text-align:center;pad
 <footer>
   <div class="footer-logo">Jean Rocheline <span>Fashion</span></div>
   <p>Porto-Novo, Bénin · © <span id="yr"></span> · Tous droits réservés</p>
+  <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(192,57,43,0.15);
+    color:var(--rouge);padding:4px 14px;border-radius:50px;font-size:0.7rem;margin-top:0.8rem">
+    👁 <span id="visit-num">—</span> visiteurs
+  </div>
 </footer>
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Retour en haut"
+  style="position:fixed;bottom:12rem;left:1.5rem;background:var(--noir);color:var(--blanc);width:44px;height:44px;
+  border-radius:50%;border:none;font-size:1.1rem;cursor:pointer;z-index:900;opacity:0;
+  transform:translateY(20px);transition:all 0.3s;pointer-events:none">↑</button>
+
 <a href="https://wa.me/22901505283 37" target="_blank" class="wa-float">
   <svg width="26" height="26" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
 </a>
@@ -487,13 +594,28 @@ footer{background:var(--noir);color:rgba(255,255,255,0.55);text-align:center;pad
       <button class="btn-close-admin" onclick="closeAdminPanel()">✕</button>
     </div>
     <div class="admin-tabs">
-      <button class="a-tab active" onclick="switchTab('add-model')">➕ Ajouter modèle</button>
+      <button class="a-tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+      <button class="a-tab" onclick="switchTab('add-model')">➕ Ajouter modèle</button>
       <button class="a-tab" onclick="switchTab('manage-models')">🗂 Gérer modèles</button>
       <button class="a-tab" onclick="switchTab('add-blog')">✍ Ajouter article</button>
       <button class="a-tab" onclick="switchTab('manage-blog')">📰 Gérer articles</button>
       <button class="a-tab" onclick="switchTab('comments')">💬 Commentaires</button>
+      <button class="a-tab" onclick="switchTab('avis-admin')">⭐ Avis</button>
     </div>
     <div class="admin-content">
+      <!-- DASHBOARD -->
+      <div class="a-pane" id="pane-dashboard">
+        <h3 class="a-section-title">📊 Tableau de bord</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:1rem;margin-bottom:2rem" id="stats-grid">
+          <div style="background:var(--rose-light);border-radius:4px;padding:1.2rem;text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;color:var(--rouge)" id="stat-models">—</div><div style="font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--gris)">Modèles</div></div>
+          <div style="background:var(--rose-light);border-radius:4px;padding:1.2rem;text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;color:var(--rouge)" id="stat-blogs">—</div><div style="font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--gris)">Articles</div></div>
+          <div style="background:var(--rose-light);border-radius:4px;padding:1.2rem;text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;color:var(--rouge)" id="stat-comments">—</div><div style="font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--gris)">Commentaires</div></div>
+          <div style="background:var(--rose-light);border-radius:4px;padding:1.2rem;text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;color:var(--rouge)" id="stat-avis">—</div><div style="font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--gris)">Avis clients</div></div>
+          <div style="background:var(--rose-light);border-radius:4px;padding:1.2rem;text-align:center"><div style="font-family:'Cormorant Garamond',serif;font-size:2.5rem;color:var(--rouge)" id="stat-visitors">—</div><div style="font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--gris)">Visiteurs</div></div>
+        </div>
+        <p style="font-size:0.82rem;color:var(--gris)">Mis à jour : <span id="stat-date">—</span></p>
+      </div>
+
       <div class="a-pane active" id="pane-add-model">
         <h3 class="a-section-title">Ajouter un modèle</h3>
         <div class="upload-zone" id="uz-model">
@@ -557,6 +679,12 @@ footer{background:var(--noir);color:rgba(255,255,255,0.55);text-align:center;pad
         <hr style="margin:2rem 0;border:none;border-top:1px solid var(--rose)">
         <h3 class="a-section-title" style="font-size:1.1rem">Tous les commentaires</h3>
         <div id="all-comments"></div>
+              <!-- AVIS ADMIN -->
+        <div class="a-pane" id="pane-avis-admin">
+          <h3 class="a-section-title">Gérer les avis clients</h3>
+          <div class="admin-list" id="admin-avis-list"><p class="empty-admin">Chargement…</p></div>
+        </div>
+
       </div>
     </div>
   </div>
